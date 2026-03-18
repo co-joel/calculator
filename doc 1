@@ -1,0 +1,693 @@
+import React, { useState } from 'react';
+import { Upload, Link2, Download, Settings, FileSpreadsheet, CheckCircle, AlertCircle, Info } from 'lucide-react';
+
+// ICTU Brand Colors
+const colors = {
+  navy: '#0B1F4B',
+  gold: '#C9A227',
+  orange: '#E67E22',
+  cream: '#F5F1E6',
+  white: '#FFFFFF',
+  errorRed: '#D64545',
+  successGreen: '#2E8B57',
+  lightGray: '#CCCCCC',
+  darkGray: '#666666'
+};
+
+// Default Grading Scale
+const defaultGradingScale = [
+  { grade: 'A+', min: 90, max: 100, color: colors.gold },
+  { grade: 'A', min: 85, max: 89, color: colors.gold },
+  { grade: 'B+', min: 80, max: 84, color: colors.navy },
+  { grade: 'B', min: 75, max: 79, color: colors.navy },
+  { grade: 'C+', min: 70, max: 74, color: colors.orange },
+  { grade: 'C', min: 65, max: 69, color: colors.orange },
+  { grade: 'D+', min: 60, max: 64, color: '#A0826D' },
+  { grade: 'D', min: 50, max: 59, color: '#A0826D' },
+  { grade: 'F', min: 0, max: 49, color: colors.errorRed }
+];
+
+const ICTUGradeCalculator = () => {
+  const [currentScreen, setCurrentScreen] = useState('home'); // home, config, processing, results
+  const [inputMethod, setInputMethod] = useState(null); // 'file' or 'url'
+  const [fileData, setFileData] = useState(null);
+  const [googleSheetUrl, setGoogleSheetUrl] = useState('');
+  const [gradingScale, setGradingScale] = useState(defaultGradingScale);
+  const [processedData, setProcessedData] = useState([]);
+  const [error, setError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Parse CSV data
+  const parseCSV = (text) => {
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    
+    // Validate headers
+    const requiredHeaders = ['Student Name', 'CA Score', 'Test Score', 'Total Score'];
+    const hasValidHeaders = requiredHeaders.every((header, index) => 
+      headers[index]?.toLowerCase() === header.toLowerCase()
+    );
+    
+    if (!hasValidHeaders) {
+      throw new Error('Invalid file format. Required columns: Student Name, CA Score, Test Score, Total Score');
+    }
+    
+    const data = [];
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i].trim()) {
+        const values = lines[i].split(',').map(v => v.trim());
+        data.push({
+          studentName: values[0],
+          caScore: parseFloat(values[1]) || 0,
+          testScore: parseFloat(values[2]) || 0,
+          totalScore: parseFloat(values[3]) || 0
+        });
+      }
+    }
+    
+    return data;
+  };
+
+  // Calculate grade based on total score
+  const calculateGrade = (totalScore) => {
+    for (let scale of gradingScale) {
+      if (totalScore >= scale.min && totalScore <= scale.max) {
+        return scale;
+      }
+    }
+    return gradingScale[gradingScale.length - 1]; // Default to F
+  };
+
+  // Process the data
+  const processData = () => {
+    setIsProcessing(true);
+    setError('');
+    
+    setTimeout(() => {
+      try {
+        const results = fileData.map(student => ({
+          ...student,
+          grade: calculateGrade(student.totalScore)
+        }));
+        
+        setProcessedData(results);
+        setCurrentScreen('results');
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsProcessing(false);
+      }
+    }, 1500);
+  };
+
+  // Handle file upload
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target.result;
+        const data = parseCSV(text);
+        setFileData(data);
+        setError('');
+        setInputMethod('file');
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Handle Google Sheets URL
+  const handleGoogleSheets = () => {
+    if (!googleSheetUrl) {
+      setError('Please enter a valid Google Sheets URL');
+      return;
+    }
+    
+    // Simulate fetching data
+    setError('Note: In production, this would fetch from Google Sheets API. For demo, use file upload.');
+  };
+
+  // Download results as CSV
+  const downloadResults = () => {
+    const headers = ['Student Name', 'CA Score', 'Test Score', 'Total Score', 'Grade'];
+    const rows = processedData.map(row => 
+      [row.studentName, row.caScore, row.testScore, row.totalScore, row.grade.grade].join(',')
+    );
+    
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ictu_grades_report.csv';
+    a.click();
+  };
+
+  // Render screens
+  const renderHomeScreen = () => (
+    <div style={{ padding: '16px' }}>
+      {/* Logo Header */}
+      <div style={{
+        textAlign: 'center',
+        marginBottom: '32px',
+        paddingTop: '20px'
+      }}>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          background: `linear-gradient(135deg, ${colors.gold}, #E8C547)`,
+          borderRadius: '20px',
+          margin: '0 auto 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 12px rgba(201, 162, 39, 0.3)'
+        }}>
+          <FileSpreadsheet size={40} color={colors.navy} strokeWidth={2.5} />
+        </div>
+        <h1 style={{
+          fontSize: '28px',
+          fontWeight: 'bold',
+          color: colors.navy,
+          marginBottom: '8px',
+          fontFamily: 'Poppins, sans-serif'
+        }}>ICTU Grade Calculator</h1>
+        <p style={{
+          fontSize: '14px',
+          color: colors.darkGray,
+          fontFamily: 'Poppins, sans-serif'
+        }}>Calculate student grades efficiently</p>
+      </div>
+
+      {/* Input Method Cards */}
+      <div style={{ marginBottom: '24px' }}>
+        <h2 style={{
+          fontSize: '20px',
+          fontWeight: '600',
+          color: colors.navy,
+          marginBottom: '16px',
+          fontFamily: 'Poppins, sans-serif'
+        }}>Choose Input Method</h2>
+
+        {/* File Upload Card */}
+        <label htmlFor="file-upload" style={{
+          display: 'block',
+          background: colors.white,
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '16px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          border: `2px solid ${inputMethod === 'file' ? colors.gold : 'transparent'}`,
+          cursor: 'pointer',
+          transition: 'all 0.3s'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              background: colors.cream,
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Upload size={24} color={colors.navy} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: colors.navy,
+                marginBottom: '4px',
+                fontFamily: 'Poppins, sans-serif'
+              }}>Upload Excel File</h3>
+              <p style={{
+                fontSize: '12px',
+                color: colors.darkGray,
+                fontFamily: 'Poppins, sans-serif'
+              }}>.xlsx or .csv format</p>
+            </div>
+            {fileData && <CheckCircle size={20} color={colors.successGreen} />}
+          </div>
+        </label>
+        <input
+          id="file-upload"
+          type="file"
+          accept=".csv,.xlsx,.xls"
+          onChange={handleFileUpload}
+          style={{ display: 'none' }}
+        />
+
+        {/* Google Sheets Card */}
+        <div style={{
+          background: colors.white,
+          borderRadius: '16px',
+          padding: '20px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          border: `2px solid ${inputMethod === 'url' ? colors.gold : 'transparent'}`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              background: colors.cream,
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Link2 size={24} color={colors.navy} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: colors.navy,
+                marginBottom: '4px',
+                fontFamily: 'Poppins, sans-serif'
+              }}>Google Sheets URL</h3>
+              <p style={{
+                fontSize: '12px',
+                color: colors.darkGray,
+                fontFamily: 'Poppins, sans-serif'
+              }}>Paste public sheet link</p>
+            </div>
+          </div>
+          <input
+            type="text"
+            placeholder="https://docs.google.com/spreadsheets/..."
+            value={googleSheetUrl}
+            onChange={(e) => setGoogleSheetUrl(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: `1px solid ${colors.lightGray}`,
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontFamily: 'Poppins, sans-serif',
+              marginBottom: '12px'
+            }}
+          />
+          <button
+            onClick={handleGoogleSheets}
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: colors.orange,
+              color: colors.white,
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              fontFamily: 'Poppins, sans-serif',
+              cursor: 'pointer'
+            }}
+          >
+            Connect Sheet
+          </button>
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div style={{
+          background: '#FEE',
+          border: `1px solid ${colors.errorRed}`,
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '16px',
+          display: 'flex',
+          gap: '12px'
+        }}>
+          <AlertCircle size={20} color={colors.errorRed} />
+          <p style={{ fontSize: '14px', color: colors.errorRed, fontFamily: 'Poppins, sans-serif' }}>
+            {error}
+          </p>
+        </div>
+      )}
+
+      {/* Info Box */}
+      <div style={{
+        background: colors.cream,
+        border: `1px solid ${colors.gold}`,
+        borderRadius: '12px',
+        padding: '16px',
+        marginBottom: '24px',
+        display: 'flex',
+        gap: '12px'
+      }}>
+        <Info size={20} color={colors.gold} />
+        <div style={{ fontSize: '12px', color: colors.navy, fontFamily: 'Poppins, sans-serif' }}>
+          <strong>Required Columns:</strong> Student Name, CA Score, Test Score, Total Score
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <button
+          onClick={() => setCurrentScreen('config')}
+          style={{
+            flex: 1,
+            padding: '14px',
+            background: colors.white,
+            color: colors.navy,
+            border: `2px solid ${colors.navy}`,
+            borderRadius: '14px',
+            fontSize: '14px',
+            fontWeight: '600',
+            fontFamily: 'Poppins, sans-serif',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+        >
+          <Settings size={18} />
+          Grading Scale
+        </button>
+        <button
+          onClick={processData}
+          disabled={!fileData}
+          style={{
+            flex: 2,
+            padding: '14px',
+            background: fileData ? colors.navy : colors.lightGray,
+            color: colors.white,
+            border: 'none',
+            borderRadius: '14px',
+            fontSize: '14px',
+            fontWeight: '600',
+            fontFamily: 'Poppins, sans-serif',
+            cursor: fileData ? 'pointer' : 'not-allowed',
+            boxShadow: fileData ? '0 4px 12px rgba(11, 31, 75, 0.3)' : 'none'
+          }}
+        >
+          Calculate Grades
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderConfigScreen = () => (
+    <div style={{ padding: '16px' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        marginBottom: '24px',
+        gap: '12px'
+      }}>
+        <button
+          onClick={() => setCurrentScreen('home')}
+          style={{
+            background: colors.cream,
+            border: 'none',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            cursor: 'pointer',
+            fontFamily: 'Poppins, sans-serif',
+            fontWeight: '600',
+            color: colors.navy
+          }}
+        >
+          ← Back
+        </button>
+        <h2 style={{
+          fontSize: '20px',
+          fontWeight: '600',
+          color: colors.navy,
+          fontFamily: 'Poppins, sans-serif'
+        }}>Grading Scale Configuration</h2>
+      </div>
+
+      <div style={{ background: colors.white, borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+        {gradingScale.map((scale, index) => (
+          <div key={index} style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '16px',
+            borderBottom: index < gradingScale.length - 1 ? `1px solid ${colors.cream}` : 'none'
+          }}>
+            <div style={{
+              background: scale.color,
+              color: colors.white,
+              padding: '8px 16px',
+              borderRadius: '20px',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              fontFamily: 'Poppins, sans-serif',
+              minWidth: '50px',
+              textAlign: 'center'
+            }}>
+              {scale.grade}
+            </div>
+            <div style={{ flex: 1, fontSize: '14px', color: colors.navy, fontFamily: 'Poppins, sans-serif' }}>
+              {scale.min}% - {scale.max}%
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{
+        background: colors.cream,
+        border: `1px solid ${colors.gold}`,
+        borderRadius: '12px',
+        padding: '16px',
+        marginTop: '16px',
+        fontSize: '12px',
+        color: colors.navy,
+        fontFamily: 'Poppins, sans-serif'
+      }}>
+        <strong>Note:</strong> This grading scale is used to calculate student grades based on their total scores.
+      </div>
+    </div>
+  );
+
+  const renderResultsScreen = () => (
+    <div style={{ padding: '16px' }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '24px'
+      }}>
+        <h2 style={{
+          fontSize: '20px',
+          fontWeight: '600',
+          color: colors.navy,
+          fontFamily: 'Poppins, sans-serif'
+        }}>Grade Results</h2>
+        <button
+          onClick={() => setCurrentScreen('home')}
+          style={{
+            background: colors.cream,
+            border: 'none',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            cursor: 'pointer',
+            fontFamily: 'Poppins, sans-serif',
+            fontWeight: '600',
+            color: colors.navy
+          }}
+        >
+          ← New Calculation
+        </button>
+      </div>
+
+      {/* Summary Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+        <div style={{
+          background: colors.white,
+          borderRadius: '12px',
+          padding: '16px',
+          textAlign: 'center',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          borderLeft: `4px solid ${colors.gold}`
+        }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: colors.navy, fontFamily: 'Poppins, sans-serif' }}>
+            {processedData.length}
+          </div>
+          <div style={{ fontSize: '12px', color: colors.darkGray, fontFamily: 'Poppins, sans-serif' }}>
+            Students
+          </div>
+        </div>
+        <div style={{
+          background: colors.white,
+          borderRadius: '12px',
+          padding: '16px',
+          textAlign: 'center',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          borderLeft: `4px solid ${colors.successGreen}`
+        }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: colors.navy, fontFamily: 'Poppins, sans-serif' }}>
+            {processedData.filter(s => s.grade.grade !== 'F').length}
+          </div>
+          <div style={{ fontSize: '12px', color: colors.darkGray, fontFamily: 'Poppins, sans-serif' }}>
+            Passed
+          </div>
+        </div>
+        <div style={{
+          background: colors.white,
+          borderRadius: '12px',
+          padding: '16px',
+          textAlign: 'center',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          borderLeft: `4px solid ${colors.errorRed}`
+        }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: colors.navy, fontFamily: 'Poppins, sans-serif' }}>
+            {processedData.filter(s => s.grade.grade === 'F').length}
+          </div>
+          <div style={{ fontSize: '12px', color: colors.darkGray, fontFamily: 'Poppins, sans-serif' }}>
+            Failed
+          </div>
+        </div>
+      </div>
+
+      {/* Results Table */}
+      <div style={{
+        background: colors.white,
+        borderRadius: '16px',
+        overflow: 'hidden',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+        marginBottom: '16px'
+      }}>
+        <div style={{
+          background: colors.navy,
+          color: colors.white,
+          padding: '16px',
+          display: 'grid',
+          gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+          gap: '8px',
+          fontSize: '12px',
+          fontWeight: '600',
+          fontFamily: 'Poppins, sans-serif'
+        }}>
+          <div>Student Name</div>
+          <div>CA</div>
+          <div>Test</div>
+          <div>Total</div>
+          <div>Grade</div>
+        </div>
+        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+          {processedData.map((student, index) => (
+            <div
+              key={index}
+              style={{
+                padding: '16px',
+                display: 'grid',
+                gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+                gap: '8px',
+                borderBottom: `1px solid ${colors.cream}`,
+                fontSize: '14px',
+                fontFamily: 'Poppins, sans-serif',
+                alignItems: 'center'
+              }}
+            >
+              <div style={{ fontWeight: '500', color: colors.navy }}>{student.studentName}</div>
+              <div style={{ color: colors.darkGray }}>{student.caScore}</div>
+              <div style={{ color: colors.darkGray }}>{student.testScore}</div>
+              <div style={{ fontWeight: '600', color: colors.navy }}>{student.totalScore}</div>
+              <div>
+                <span style={{
+                  background: student.grade.color,
+                  color: colors.white,
+                  padding: '6px 12px',
+                  borderRadius: '20px',
+                  fontSize: '12px',
+                  fontWeight: 'bold'
+                }}>
+                  {student.grade.grade}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Download Button */}
+      <button
+        onClick={downloadResults}
+        style={{
+          width: '100%',
+          padding: '14px',
+          background: `linear-gradient(135deg, ${colors.gold}, #E8C547)`,
+          color: colors.navy,
+          border: 'none',
+          borderRadius: '14px',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          fontFamily: 'Poppins, sans-serif',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          boxShadow: '0 4px 12px rgba(201, 162, 39, 0.3)'
+        }}
+      >
+        <Download size={20} />
+        Download Results (CSV)
+      </button>
+    </div>
+  );
+
+  const renderProcessingScreen = () => (
+    <div style={{
+      padding: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '400px'
+    }}>
+      <div style={{
+        width: '80px',
+        height: '80px',
+        borderRadius: '50%',
+        border: `4px solid ${colors.cream}`,
+        borderTopColor: colors.gold,
+        animation: 'spin 1s linear infinite',
+        marginBottom: '24px'
+      }} />
+      <h3 style={{
+        fontSize: '18px',
+        fontWeight: '600',
+        color: colors.navy,
+        marginBottom: '8px',
+        fontFamily: 'Poppins, sans-serif'
+      }}>Processing Grades...</h3>
+      <p style={{
+        fontSize: '14px',
+        color: colors.darkGray,
+        fontFamily: 'Poppins, sans-serif'
+      }}>This will take just a moment</p>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+
+  return (
+    <div style={{
+      maxWidth: '480px',
+      margin: '0 auto',
+      minHeight: '100vh',
+      background: colors.cream,
+      fontFamily: 'Poppins, -apple-system, sans-serif'
+    }}>
+      {isProcessing && renderProcessingScreen()}
+      {!isProcessing && currentScreen === 'home' && renderHomeScreen()}
+      {!isProcessing && currentScreen === 'config' && renderConfigScreen()}
+      {!isProcessing && currentScreen === 'results' && renderResultsScreen()}
+    </div>
+  );
+};
+
+export default ICTUGradeCalculator;
