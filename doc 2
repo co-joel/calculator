@@ -1,0 +1,468 @@
+import React, { useState } from 'react';
+import { Play, CheckCircle, Code, BookOpen } from 'lucide-react';
+
+const KotlinConceptsDemo = () => {
+  const [activeTask, setActiveTask] = useState(null);
+  const [output, setOutput] = useState([]);
+
+  // Task 1: processList function
+  const processList = (numbers, predicate) => {
+    return numbers.filter(predicate);
+  };
+
+  // Task 1 Execution
+  const runTask1 = () => {
+    const nums = [1, 2, 3, 4, 5, 6];
+    const even = processList(nums, (it) => it % 2 === 0);
+    
+    setOutput([
+      '=== TASK 1: Process List with Lambda ===',
+      '',
+      'Input: [1, 2, 3, 4, 5, 6]',
+      'Predicate: it % 2 === 0 (even numbers)',
+      '',
+      `Output: [${even.join(', ')}]`,
+      '',
+      '✓ Function successfully filters even numbers using lambda'
+    ]);
+    setActiveTask(1);
+  };
+
+  // Task 2: Map with associateWith
+  const runTask2 = () => {
+    const words = ["apple", "cat", "banana", "dog", "elephant"];
+    
+    // Create map: string -> length (associateWith equivalent)
+    const wordLengthMap = {};
+    words.forEach(word => {
+      wordLengthMap[word] = word.length;
+    });
+    
+    // Filter and print entries where length > 4
+    const results = [];
+    Object.entries(wordLengthMap)
+      .filter(([word, length]) => length > 4)
+      .forEach(([word, length]) => {
+        results.push(`${word} has length ${length}`);
+      });
+    
+    setOutput([
+      '=== TASK 2: Map Creation & Filtering ===',
+      '',
+      'Input: ["apple", "cat", "banana", "dog", "elephant"]',
+      '',
+      'Map Created (word -> length):',
+      ...Object.entries(wordLengthMap).map(([k, v]) => `  ${k}: ${v}`),
+      '',
+      'Filtered (length > 4):',
+      ...results,
+      '',
+      '✓ Successfully created map and filtered entries'
+    ]);
+    setActiveTask(2);
+  };
+
+  // Task 3: Complex Data Processing
+  const runTask3 = () => {
+    const people = [
+      { name: "Alice", age: 25 },
+      { name: "Bob", age: 30 },
+      { name: "Charlie", age: 35 },
+      { name: "Anna", age: 22 },
+      { name: "Ben", age: 28 }
+    ];
+    
+    // Step 1: Filter people whose name starts with 'A' or 'B'
+    const filteredPeople = people.filter(person => 
+      person.name.startsWith('A') || person.name.startsWith('B')
+    );
+    
+    // Step 2: Extract ages (map)
+    const ages = filteredPeople.map(person => person.age);
+    
+    // Step 3: Calculate average
+    const sum = ages.reduce((acc, age) => acc + age, 0);
+    const average = sum / ages.length;
+    
+    // Step 4: Format to one decimal place
+    const formattedAverage = average.toFixed(1);
+    
+    setOutput([
+      '=== TASK 3: Complex Data Processing ===',
+      '',
+      'People Data:',
+      ...people.map(p => `  ${p.name}, ${p.age} years old`),
+      '',
+      'Step 1: Filter (names starting with A or B):',
+      ...filteredPeople.map(p => `  ✓ ${p.name} (${p.age})`),
+      '',
+      'Step 2: Extract ages:',
+      `  Ages: [${ages.join(', ')}]`,
+      '',
+      'Step 3: Calculate average:',
+      `  Sum: ${sum}`,
+      `  Count: ${ages.length}`,
+      `  Average: ${sum} / ${ages.length} = ${average}`,
+      '',
+      'Step 4: Result (rounded to 1 decimal):',
+      `  Average age: ${formattedAverage}`,
+      '',
+      '✓ Successfully processed data using filter, map, and reduce'
+    ]);
+    setActiveTask(3);
+  };
+
+  // Run all tasks
+  const runAllTasks = () => {
+    const nums = [1, 2, 3, 4, 5, 6];
+    const even = processList(nums, (it) => it % 2 === 0);
+    
+    const words = ["apple", "cat", "banana", "dog", "elephant"];
+    const wordLengthMap = {};
+    words.forEach(word => {
+      wordLengthMap[word] = word.length;
+    });
+    
+    const task2Results = [];
+    Object.entries(wordLengthMap)
+      .filter(([word, length]) => length > 4)
+      .forEach(([word, length]) => {
+        task2Results.push(`${word} has length ${length}`);
+      });
+    
+    const people = [
+      { name: "Alice", age: 25 },
+      { name: "Bob", age: 30 },
+      { name: "Charlie", age: 35 },
+      { name: "Anna", age: 22 },
+      { name: "Ben", age: 28 }
+    ];
+    
+    const filteredPeople = people.filter(person => 
+      person.name.startsWith('A') || person.name.startsWith('B')
+    );
+    const ages = filteredPeople.map(person => person.age);
+    const average = (ages.reduce((acc, age) => acc + age, 0) / ages.length).toFixed(1);
+    
+    setOutput([
+      '╔═══════════════════════════════════════════╗',
+      '║     ALL TASKS EXECUTION RESULTS          ║',
+      '╚═══════════════════════════════════════════╝',
+      '',
+      '┌─────────────────────────────────────────┐',
+      '│ TASK 1: Process List with Lambda       │',
+      '└─────────────────────────────────────────┘',
+      `Input: [${nums.join(', ')}]`,
+      `Filter: Even numbers (it % 2 === 0)`,
+      `Result: [${even.join(', ')}]`,
+      '',
+      '┌─────────────────────────────────────────┐',
+      '│ TASK 2: Map Creation & Filtering       │',
+      '└─────────────────────────────────────────┘',
+      'Words with length > 4:',
+      ...task2Results.map(r => `  • ${r}`),
+      '',
+      '┌─────────────────────────────────────────┐',
+      '│ TASK 3: Complex Data Processing        │',
+      '└─────────────────────────────────────────┘',
+      'People starting with A or B:',
+      ...filteredPeople.map(p => `  • ${p.name} (${p.age})`),
+      `Average age: ${average}`,
+      '',
+      '✅ All tasks completed successfully!'
+    ]);
+    setActiveTask('all');
+  };
+
+  const codeExamples = {
+    1: `// Task 1: Higher-Order Function with Lambda
+fun processList(
+  numbers: List<Int>,
+  predicate: (Int) -> Boolean
+): List<Int> {
+  return numbers.filter(predicate)
+}
+
+// Usage with lambda
+val nums = listOf(1, 2, 3, 4, 5, 6)
+val even = processList(nums) { it % 2 == 0 }
+println(even) // [2, 4, 6]`,
+    
+    2: `// Task 2: Map Operations
+val words = listOf("apple", "cat", "banana", "dog", "elephant")
+
+// Create map: string -> length
+val wordLengthMap = words.associateWith { it.length }
+
+// Filter and print entries with length > 4
+wordLengthMap
+  .filter { (_, length) -> length > 4 }
+  .forEach { (word, length) ->
+    println("$word has length $length")
+  }`,
+    
+    3: `// Task 3: Complex Data Processing
+data class Person(val name: String, val age: Int)
+
+val people = listOf(
+  Person("Alice", 25),
+  Person("Bob", 30),
+  Person("Charlie", 35),
+  Person("Anna", 22),
+  Person("Ben", 28)
+)
+
+// Find average age of people with names starting with A or B
+val average = people
+  .filter { it.name.startsWith("A") || it.name.startsWith("B") }
+  .map { it.age }
+  .average()
+
+println("Average age: %.1f".format(average))`
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: '20px',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    }}>
+      <div style={{
+        maxWidth: '1000px',
+        margin: '0 auto'
+      }}>
+        {/* Header */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '30px',
+          marginBottom: '20px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+            <BookOpen size={32} color="#667eea" />
+            <h1 style={{
+              fontSize: '28px',
+              fontWeight: 'bold',
+              color: '#2d3748',
+              margin: 0
+            }}>
+              Kotlin Concepts Demo
+            </h1>
+          </div>
+          <p style={{ color: '#718096', fontSize: '14px', margin: 0 }}>
+            Lambdas, Higher-Order Functions, Lists, Maps & Data Processing
+          </p>
+        </div>
+
+        {/* Task Buttons */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '12px',
+          marginBottom: '20px'
+        }}>
+          <button
+            onClick={runTask1}
+            style={{
+              background: 'white',
+              border: activeTask === 1 ? '3px solid #667eea' : '3px solid transparent',
+              borderRadius: '12px',
+              padding: '20px',
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+              textAlign: 'left'
+            }}
+          >
+            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#2d3748', marginBottom: '8px' }}>
+              Task 1
+            </div>
+            <div style={{ fontSize: '12px', color: '#718096' }}>
+              Process List with Lambda
+            </div>
+          </button>
+
+          <button
+            onClick={runTask2}
+            style={{
+              background: 'white',
+              border: activeTask === 2 ? '3px solid #667eea' : '3px solid transparent',
+              borderRadius: '12px',
+              padding: '20px',
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+              textAlign: 'left'
+            }}
+          >
+            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#2d3748', marginBottom: '8px' }}>
+              Task 2
+            </div>
+            <div style={{ fontSize: '12px', color: '#718096' }}>
+              Map & Filter Operations
+            </div>
+          </button>
+
+          <button
+            onClick={runTask3}
+            style={{
+              background: 'white',
+              border: activeTask === 3 ? '3px solid #667eea' : '3px solid transparent',
+              borderRadius: '12px',
+              padding: '20px',
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+              textAlign: 'left'
+            }}
+          >
+            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#2d3748', marginBottom: '8px' }}>
+              Task 3
+            </div>
+            <div style={{ fontSize: '12px', color: '#718096' }}>
+              Complex Data Processing
+            </div>
+          </button>
+
+          <button
+            onClick={runAllTasks}
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '20px',
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+              textAlign: 'left',
+              color: 'white'
+            }}
+          >
+            <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Play size={20} />
+              Run All Tasks
+            </div>
+            <div style={{ fontSize: '12px', opacity: 0.9 }}>
+              Execute all demonstrations
+            </div>
+          </button>
+        </div>
+
+        {/* Output Console */}
+        {output.length > 0 && (
+          <div style={{
+            background: '#1a202c',
+            borderRadius: '16px',
+            padding: '24px',
+            marginBottom: '20px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            maxHeight: '500px',
+            overflowY: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '16px',
+              paddingBottom: '12px',
+              borderBottom: '1px solid #2d3748'
+            }}>
+              <CheckCircle size={20} color="#48bb78" />
+              <span style={{ color: 'white', fontWeight: 'bold', fontSize: '14px' }}>
+                Console Output
+              </span>
+            </div>
+            <pre style={{
+              fontFamily: '"Fira Code", "Courier New", monospace',
+              fontSize: '13px',
+              lineHeight: '1.6',
+              color: '#e2e8f0',
+              margin: 0,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word'
+            }}>
+              {output.join('\n')}
+            </pre>
+          </div>
+        )}
+
+        {/* Code Example */}
+        {activeTask && activeTask !== 'all' && (
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '16px',
+              paddingBottom: '12px',
+              borderBottom: '1px solid #e2e8f0'
+            }}>
+              <Code size={20} color="#667eea" />
+              <span style={{ color: '#2d3748', fontWeight: 'bold', fontSize: '14px' }}>
+                Kotlin Code Example - Task {activeTask}
+              </span>
+            </div>
+            <pre style={{
+              fontFamily: '"Fira Code", "Courier New", monospace',
+              fontSize: '13px',
+              lineHeight: '1.6',
+              color: '#2d3748',
+              margin: 0,
+              background: '#f7fafc',
+              padding: '16px',
+              borderRadius: '8px',
+              overflowX: 'auto'
+            }}>
+              {codeExamples[activeTask]}
+            </pre>
+          </div>
+        )}
+
+        {/* Concepts Reference */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '24px',
+          marginTop: '20px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ color: '#2d3748', marginBottom: '16px', fontSize: '18px' }}>
+            Kotlin Concepts Demonstrated
+          </h3>
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {[
+              'Higher-Order Functions (processList accepts lambda)',
+              'Lambda Expressions with "it" parameter',
+              'Filter operation (predicate-based filtering)',
+              'Map operation (data transformation)',
+              'AssociateWith (creating maps from lists)',
+              'ForEach iteration',
+              'Data classes (Person)',
+              'Collection operations (filter, map, reduce)',
+              'Function types: (Int) -> Boolean',
+              'Chaining operations'
+            ].map((concept, i) => (
+              <div key={i} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px',
+                background: '#f7fafc',
+                borderRadius: '8px',
+                borderLeft: '3px solid #667eea'
+              }}>
+                <CheckCircle size={16} color="#48bb78" />
+                <span style={{ color: '#4a5568', fontSize: '14px' }}>
+                  {concept}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
